@@ -1,4 +1,3 @@
-// src/main/java/TTDH/Webbanhangdientu/models/Product.java
 package TTDH.Webbanhangdientu.models;
 
 import lombok.Data;
@@ -15,5 +14,5 @@ public class Product {
     private String description;
     private String categoryId;
     private int stock;
-    private String imageUrl; // Optional for product image
+    private String image;
 }
