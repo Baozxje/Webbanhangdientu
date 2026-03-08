@@ -20,7 +20,7 @@ public class User {
 
     private String password;
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, sparse = true)
     @Email(message = "Email không đúng định dạng")
     private String email;
 
