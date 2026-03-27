@@ -1,21 +1,22 @@
-// src/main/java/TTDH/Webbanhangdientu/controllers/AuthController.java
+// controllers/AuthController.java
 package TTDH.Webbanhangdientu.controllers;
 
 import TTDH.Webbanhangdientu.authentication.JwtUtil;
+import TTDH.Webbanhangdientu.dto.auth.AuthResponse;
+import TTDH.Webbanhangdientu.dto.auth.LoginRequest;
+import TTDH.Webbanhangdientu.dto.auth.RefreshTokenRequest;
+import TTDH.Webbanhangdientu.dto.auth.RegisterRequest;
+import TTDH.Webbanhangdientu.dto.user.UserProfileResponse;   // ← Sửa import này
 import TTDH.Webbanhangdientu.models.User;
 import TTDH.Webbanhangdientu.services.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Map;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -31,25 +32,56 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        User savedUser = userService.register(user);
-        return ResponseEntity.ok(savedUser);
+    public ResponseEntity<UserProfileResponse> register(@Valid @RequestBody RegisterRequest request) {   // ← Sửa kiểu trả về
+        UserProfileResponse userResponse = userService.register(request);
+        return ResponseEntity.ok(userResponse);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
-        String username = loginRequest.get("username");
-        String password = loginRequest.get("password");
-
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+            );
         } catch (BadCredentialsException e) {
-            return ResponseEntity.badRequest().body("Invalid username or password");
+            throw new RuntimeException("Tên đăng nhập hoặc mật khẩu không đúng");
         }
 
-        UserDetails userDetails = userService.loadUserByUsername(username);
-        String jwt = jwtUtil.generateToken(userDetails);
+        UserDetails userDetails = userService.loadUserByUsername(request.getUsername());
+        String accessToken = jwtUtil.generateAccessToken(userDetails);
+        String refreshToken = jwtUtil.generateRefreshToken(userDetails);
 
-        return ResponseEntity.ok(Map.of("token", jwt));
+        String role = userService.findByUsername(request.getUsername())
+                .map(User::getRole)
+                .orElse("USER");
+
+        AuthResponse response = new AuthResponse(accessToken, refreshToken, request.getUsername(), role);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+
+        if (!jwtUtil.validateToken(refreshToken)) {
+            throw new RuntimeException("Refresh token không hợp lệ hoặc đã hết hạn");
+        }
+
+        String username = jwtUtil.extractUsername(refreshToken);
+        UserDetails userDetails = userService.loadUserByUsername(username);
+
+        String newAccessToken = jwtUtil.generateAccessToken(userDetails);
+
+        String role = userService.findByUsername(username)
+                .map(User::getRole)
+                .orElse("USER");
+
+        AuthResponse response = new AuthResponse(newAccessToken, refreshToken, username, role);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout() {
+        return ResponseEntity.ok("Đăng xuất thành công. Vui lòng xóa token ở phía client.");
     }
 }

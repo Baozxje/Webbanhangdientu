@@ -1,4 +1,4 @@
-// src/main/java/TTDH/Webbanhangdientu/authentication/JwtUtil.java
+// authentication/JwtUtil.java
 package TTDH.Webbanhangdientu.authentication;
 
 import io.jsonwebtoken.Claims;
@@ -16,8 +16,29 @@ import java.util.function.Function;
 
 @Component
 public class JwtUtil {
-    private String SECRET_KEY = "your_secret_key_here_change_this"; // Change this to a secure key
-    private Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+
+    private final String SECRET_KEY = "your_very_long_and_secure_secret_key_change_in_production_2026";
+    private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+
+    // Access Token (ngắn hạn - 15 phút)
+    public String generateAccessToken(UserDetails userDetails) {
+        return createToken(new HashMap<>(), userDetails.getUsername(), 1000 * 60 * 15); // 15 phút
+    }
+
+    // Refresh Token (dài hạn - 7 ngày)
+    public String generateRefreshToken(UserDetails userDetails) {
+        return createToken(new HashMap<>(), userDetails.getUsername(), 1000 * 60 * 60 * 24 * 7); // 7 ngày
+    }
+
+    private String createToken(Map<String, Object> claims, String subject, long expirationTime) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(subject)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -33,26 +54,24 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     private Boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(UserDetails userDetails) {
-        Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, userDetails.getUsername());
-    }
-
-    private String createToken(Map<String, Object> claims, String subject) {
-        return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 hours
-                .signWith(key, SignatureAlgorithm.HS256).compact();
-    }
-
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    // Kiểm tra token có hợp lệ không (không cần UserDetails)
+    public Boolean validateToken(String token) {
+        return !isTokenExpired(token);
     }
 }

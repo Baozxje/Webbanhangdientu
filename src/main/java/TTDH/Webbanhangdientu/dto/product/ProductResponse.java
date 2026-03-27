@@ -1,13 +1,10 @@
-package TTDH.Webbanhangdientu.models;
+// dto/product/ProductResponse.java
+package TTDH.Webbanhangdientu.dto.product;
 
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "products")
 @Data
-public class Product {
-    @Id
+public class ProductResponse {
     private String id;
     private String name;
     private double price;
