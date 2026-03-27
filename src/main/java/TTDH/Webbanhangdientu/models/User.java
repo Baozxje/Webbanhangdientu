@@ -24,7 +24,7 @@ public class User {
     @Email(message = "Email không đúng định dạng")
     private String email;
 
-    private String role; // "ADMIN" or "USER"
+    private String role;
     private String address;
     private String phone;
 }

@@ -63,7 +63,7 @@ public class OrderService {
 
         // Clear cart
         cart.getItems().clear();
-        cartService.cartRepository.save(cart);
+        cartService.saveCart(cart);
 
         return savedOrder;
     }

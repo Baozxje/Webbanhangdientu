@@ -11,13 +11,21 @@ import java.util.List;
 @Document(collection = "orders")
 @Data
 public class Order {
+
     @Id
     private String id;
+
     private String userId;
+
     private List<OrderItem> items = new ArrayList<>();
+
     private double total;
-    private String status; // e.g., "PENDING", "SHIPPED", "DELIVERED"
+
+    private String status; // "PENDING", "SHIPPED", "DELIVERED"
+
     private String address;
+
     private Date orderDate = new Date();
+
     private String couponCode;
 }

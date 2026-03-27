@@ -52,5 +52,7 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
-    // Additional methods like update quantity, clear cart
+    public Cart saveCart(Cart cart) {
+        return cartRepository.save(cart);
+    }
 }
