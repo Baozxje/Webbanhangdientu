@@ -81,6 +81,10 @@ public class ProductService {
         product.setStock(request.getStock());
         product.setImageUrl(request.getImageUrl());
 
+        product.setColors(request.getColors());
+        product.setSpecs(request.getSpecs());
+        product.setVariants(request.getVariants());
+
         Product updated = productRepository.save(product);
         return convertToResponse(updated);
     }
@@ -98,6 +102,11 @@ public class ProductService {
         product.setCategoryId(request.getCategoryId());
         product.setStock(request.getStock());
         product.setImageUrl(request.getImageUrl());
+
+        if (request.getColors() != null) product.setColors(request.getColors());
+        if (request.getSpecs() != null) product.setSpecs(request.getSpecs());
+        if (request.getVariants() != null) product.setVariants(request.getVariants());
+
         return product;
     }
 
@@ -110,6 +119,11 @@ public class ProductService {
         response.setCategoryId(product.getCategoryId());
         response.setStock(product.getStock());
         response.setImageUrl(product.getImageUrl());
+
+        response.setColors(product.getColors());
+        response.setSpecs(product.getSpecs());
+        response.setVariants(product.getVariants());
+
         return response;
     }
 
