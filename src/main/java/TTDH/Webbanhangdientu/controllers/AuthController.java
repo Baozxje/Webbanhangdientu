@@ -41,21 +41,20 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(request.getPhone(), request.getPassword())
             );
         } catch (BadCredentialsException e) {
             throw new RuntimeException("Tên đăng nhập hoặc mật khẩu không đúng");
         }
 
-        UserDetails userDetails = userService.loadUserByUsername(request.getUsername());
+        UserDetails userDetails = userService.loadUserByUsername(request.getPhone());
         String accessToken = jwtUtil.generateAccessToken(userDetails);
         String refreshToken = jwtUtil.generateRefreshToken(userDetails);
-
-        String role = userService.findByUsername(request.getUsername())
+        String role = userService.findByPhone(request.getPhone())
                 .map(User::getRole)
                 .orElse("USER");
 
-        AuthResponse response = new AuthResponse(accessToken, refreshToken, request.getUsername(), role);
+        AuthResponse response = new AuthResponse(accessToken, refreshToken, request.getPhone(), role);
         return ResponseEntity.ok(response);
     }
 
@@ -67,16 +66,16 @@ public class AuthController {
             throw new RuntimeException("Refresh token không hợp lệ hoặc đã hết hạn");
         }
 
-        String username = jwtUtil.extractUsername(refreshToken);
-        UserDetails userDetails = userService.loadUserByUsername(username);
+        String phone = jwtUtil.extractUsername(refreshToken);
+        UserDetails userDetails = userService.loadUserByUsername(phone);
 
         String newAccessToken = jwtUtil.generateAccessToken(userDetails);
 
-        String role = userService.findByUsername(username)
+        String role = userService.findByPhone(phone)
                 .map(User::getRole)
                 .orElse("USER");
 
-        AuthResponse response = new AuthResponse(newAccessToken, refreshToken, username, role);
+        AuthResponse response = new AuthResponse(newAccessToken, refreshToken, phone, role);
         return ResponseEntity.ok(response);
     }
 

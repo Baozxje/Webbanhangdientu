@@ -2,6 +2,7 @@ package TTDH.Webbanhangdientu.config;
 
 import TTDH.Webbanhangdientu.authentication.JwtAuthenticationFilter;
 import TTDH.Webbanhangdientu.authentication.JwtUtil;
+import TTDH.Webbanhangdientu.authentication.RateLimitFilter;
 import TTDH.Webbanhangdientu.services.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,12 +26,14 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final RateLimitFilter rateLimitFilter;
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
-    public SecurityConfig(UserService userService, JwtUtil jwtUtil) {
+    public SecurityConfig(UserService userService, JwtUtil jwtUtil, RateLimitFilter rateLimitFilter) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
+        this.rateLimitFilter = rateLimitFilter;
     }
 
     @Bean
@@ -69,6 +72,7 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
+                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -28,9 +28,9 @@ public class CartController {
     // Hàm helper: Trích xuất username từ JWT Token và tìm userId tương ứng trong DB
     private String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName(); // Lấy username từ token
+        String phone = authentication.getName();
 
-        User user = userService.findByUsername(username)
+        User user = userService.findByPhone(phone)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người dùng từ token"));
 
         return user.getId(); // Trả về ID thật trong MongoDB

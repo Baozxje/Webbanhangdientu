@@ -27,12 +27,13 @@ public class OrderController {
 
     private String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        User user = userService.findByUsername(username)
+        String phone = authentication.getName();
+
+        User user = userService.findByPhone(phone)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người dùng từ token"));
+
         return user.getId();
     }
-
     @PostMapping("/place")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Order> placeOrder(@RequestBody Map<String, Object> request) {

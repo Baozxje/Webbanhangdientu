@@ -25,12 +25,13 @@ public class UserController {
     // Lấy ID người dùng an toàn từ Token
     private String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        User user = userService.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        String phone = authentication.getName(); // Token giờ chứa SĐT
+
+        User user = userService.findByPhone(phone)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người dùng từ token"));
+
         return user.getId();
     }
-
     // User lấy thông tin profile của chính mình (Đã bỏ @RequestParam)
     @GetMapping("/profile")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")

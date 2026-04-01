@@ -14,17 +14,18 @@ public class User {
 
     private String id;
 
-    @Indexed(unique = true)
-    @NotBlank(message = "Username không được để trống")
-    private String username;
-
     private String password;
 
     @Indexed(unique = true, sparse = true)
-    @Email(message = "Email không đúng định dạng")
+    @Email(message = "Email hong dung dinh dang")
     private String email;
 
     private String role;
     private String address;
+
+    @Indexed(unique = true)
+    @NotBlank(message = "SDT hong duoc de trong")
     private String phone;
+
+    private String fullName;
 }

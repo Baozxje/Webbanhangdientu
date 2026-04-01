@@ -30,19 +30,19 @@ public class UserService implements UserDetailsService {
 
     // Register
     public UserProfileResponse register(RegisterRequest request) {
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new RuntimeException("Username đã tồn tại");
+        if (userRepository.findByPhone(request.getPhone()).isPresent()) {
+            throw new RuntimeException("SDT đã tồn tại");
         }
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email đã tồn tại");
         }
 
         User user = new User();
-        user.setUsername(request.getUsername());
+        user.setFullName(request.getFullName());
+        user.setPhone(request.getPhone());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setEmail(request.getEmail());
         user.setAddress(request.getAddress() != null ? request.getAddress() : "");
-        user.setPhone(request.getPhone() != null ? request.getPhone() : "");
         user.setRole("USER");
 
         User savedUser = userRepository.save(user);
@@ -78,30 +78,29 @@ public class UserService implements UserDetailsService {
     private UserProfileResponse convertToProfileResponse(User user) {
         UserProfileResponse response = new UserProfileResponse();
         response.setId(user.getId());
-        response.setUsername(user.getUsername());
+        response.setFullName(user.getFullName());
         response.setEmail(user.getEmail());
         response.setAddress(user.getAddress());
         response.setPhone(user.getPhone());
         response.setRole(user.getRole());
         return response;
     }
-
     // Security
-    public Optional<User> findByUsername(String username) {
-        return userRepository.findByUsername(username);
+    public Optional<User> findByPhone(String phone) {
+        return userRepository.findByPhone(phone);
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    public UserDetails loadUserByUsername(String phone) throws UsernameNotFoundException {
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + phone));
 
         Collection<GrantedAuthority> authorities = List.of(
                 new SimpleGrantedAuthority("ROLE_" + user.getRole())
         );
 
         return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
+                user.getPhone(),
                 user.getPassword(),
                 authorities
         );
