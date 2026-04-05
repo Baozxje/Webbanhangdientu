@@ -74,6 +74,11 @@ public class UserService implements UserDetailsService {
         return userRepository.findAll();
     }
 
+    // Admin: Xóa user
+    public void deleteUser(String userId) {
+        userRepository.deleteById(userId);
+    }
+
     // Convert Entity -> Profile Response
     private UserProfileResponse convertToProfileResponse(User user) {
         UserProfileResponse response = new UserProfileResponse();
