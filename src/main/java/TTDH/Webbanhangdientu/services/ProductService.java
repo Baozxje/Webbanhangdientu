@@ -22,6 +22,10 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
+    public List<Product> findAll() {
+        return productRepository.findAll();
+    }
+
     // Lấy tất cả sản phẩm có phân trang
     public ProductPageResponse getAllProducts(int page, int size, String sortBy, String direction) {
         Sort sort = direction.equalsIgnoreCase("desc")
