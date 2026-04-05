@@ -1,17 +1,15 @@
-// services/OrderService.java
 package TTDH.Webbanhangdientu.services;
 
-import TTDH.Webbanhangdientu.models.*;
-import TTDH.Webbanhangdientu.repository.CartRepository;
+import TTDH.Webbanhangdientu.models.Order;
+import TTDH.Webbanhangdientu.models.Product;
 import TTDH.Webbanhangdientu.repository.OrderRepository;
 import TTDH.Webbanhangdientu.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class OrderService {
@@ -20,90 +18,42 @@ public class OrderService {
     private OrderRepository orderRepository;
 
     @Autowired
-    private CartRepository cartRepository;
-
-    @Autowired
     private ProductRepository productRepository;
 
-    @Autowired
-    private CouponService couponService;   // Nếu có coupon
+    @Transactional // Đảm bảo nếu trừ kho lỗi thì không tạo đơn hàng
+    public Order createOrder(Order order) {
+        // 1. Kiểm tra và Trừ kho sản phẩm
+        for (Order.OrderItem item : order.getItems()) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại: " + item.getName()));
 
-    public Order placeOrder(String userId, String address, String couponCode) {
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Giỏ hàng trống"));
-
-        if (cart.getItems().isEmpty()) {
-            throw new RuntimeException("Giỏ hàng đang trống");
-        }
-
-        Order order = new Order();
-        order.setUserId(userId);
-        order.setAddress(address);
-        order.setStatus("PENDING");
-        order.setOrderDate(new Date());
-
-        List<OrderItem> orderItems = new ArrayList<>();
-        double totalAmount = 0.0;
-
-        for (CartItem cartItem : cart.getItems()) {
-            Product product = productRepository.findById(cartItem.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
-
-            if (product.getStock() < cartItem.getQuantity()) {
-                throw new RuntimeException("Sản phẩm " + product.getName() + " không đủ hàng");
+            if (product.getStock() < item.getQuantity()) {
+                throw new RuntimeException("Sản phẩm " + item.getName() + " đã hết hàng hoặc không đủ số lượng!");
             }
 
-            OrderItem orderItem = new OrderItem();
-            orderItem.setProductId(cartItem.getProductId());
-            orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setPriceAtPurchase(product.getPrice());
-
-            orderItems.add(orderItem);
-            totalAmount += product.getPrice() * cartItem.getQuantity();
-
-            // Giảm stock
-            product.setStock(product.getStock() - cartItem.getQuantity());
+            // Thực hiện trừ kho
+            product.setStock(product.getStock() - item.getQuantity());
             productRepository.save(product);
         }
 
-        // Áp dụng coupon nếu có
-        if (couponCode != null && !couponCode.isEmpty()) {
-            try {
-                Coupon coupon = couponService.validateCoupon(couponCode);
-                double discount = totalAmount * (coupon.getDiscountPercentage() / 100);
-                totalAmount -= discount;
-                order.setCouponCode(couponCode);
-            } catch (Exception e) {
-                // Coupon không hợp lệ thì bỏ qua, không throw lỗi
-                System.out.println("Coupon không hợp lệ: " + e.getMessage());
-            }
-        }
+        // 2. Thiết lập thông tin đơn hàng
+        order.setStatus("PENDING"); // Chờ xác nhận
+        order.setCreatedAt(LocalDateTime.now());
 
-        order.setItems(orderItems);
-        order.setTotal(totalAmount);
+        return orderRepository.save(order);
+    }
 
-        Order savedOrder = orderRepository.save(order);
-
-        // Xóa giỏ hàng sau khi đặt hàng thành công
-        cart.getItems().clear();
-        cartRepository.save(cart);
-
-        return savedOrder;
+    public List<Order> getAllOrders() {
+        return orderRepository.findAll();
     }
 
     public List<Order> getOrdersByUser(String userId) {
         return orderRepository.findByUserId(userId);
     }
 
-    public Optional<Order> getOrderById(String id) {
-        return orderRepository.findById(id);
-    }
-
-    // Dành cho Admin
-    public Order updateOrderStatus(String id, String status) {
-        Order order = orderRepository.findById(id)
+    public Order updateStatus(String orderId, String status) {
+        Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
-
         order.setStatus(status);
         return orderRepository.save(order);
     }
